@@ -59,6 +59,11 @@ namespace Geta.ImageOptimization
             {
                 allImages = FilterPreviouslyOptimizedImages(allImages);
             }
+            
+            if (!string.IsNullOrEmpty(ImageOptimizationSettings.Instance.BypassTypes))
+            {
+                allImages = FilterTypes(allImages);
+            }
 
             foreach (ImageData image in allImages)
             {
@@ -122,6 +127,16 @@ namespace Geta.ImageOptimization
         private IEnumerable<ImageData> FilterPreviouslyOptimizedImages(IEnumerable<ImageData> allImages)
         {
             return allImages.Where(imageData => this._imageLogRepository.GetLogEntry(imageData.ContentGuid) == null);
+        }
+        
+        private IEnumerable<ImageData> FilterTypes(IEnumerable<ImageData> allImages)
+        {
+            var bypassTypes = ImageOptimizationSettings.Instance.BypassTypes.Split(',').Where(c=> !string.IsNullOrEmpty(c)).Select(c=> "." + c.Trim());
+
+            if (bypassTypes.Count() == 0)
+                return allImages;
+
+            return allImages.Where(imageData => !bypassTypes.Any(c=> c == MimeTypeHelper.GetDefaultExtension(imageData.MimeType)));
         }
 
         private IEnumerable<ImageData> GetImageFiles(ContentFolder contentFolder)
